@@ -43,7 +43,7 @@ const LoginPage = () => {
 
       <div className="login-box">
         <div className="login-brand">
-          <div className="logo-card">🏋️</div>
+          <div className="logo-card">️</div>
           <div className="login-title">IRONTRACK</div>
           <div className="login-sub">Gym Attendance Management</div>
         </div>
@@ -68,7 +68,7 @@ const LoginPage = () => {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="••••••••"
-              icon="🔒"
+              
             />
 
             <label className="checkbox-row">

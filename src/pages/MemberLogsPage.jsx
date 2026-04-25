@@ -54,11 +54,10 @@ const MemberLogsPage = ({ onBack }) => {
       </div>
 
       <div className="grid-2">
-        <StatCard label="Sessions" value={memberLogs.length} icon="🗓️" color="amber" />
+        <StatCard label="Sessions" value={memberLogs.length} color="amber" />
         <StatCard
           label="Total Time"
           value={`${totalHours}h ${remainingMinutes}m`}
-          icon="⏱️"
           color="green"
         />
       </div>
@@ -100,7 +99,7 @@ const MemberLogsPage = ({ onBack }) => {
           rows={memberLogs}
           emptyState={
             <EmptyState
-              icon="📋"
+              
               title="No logs found"
               sub="No attendance records match your filter."
             />

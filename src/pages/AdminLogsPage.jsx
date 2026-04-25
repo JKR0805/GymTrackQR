@@ -86,7 +86,7 @@ const AdminLogsPage = () => {
                 placeholder="Search member name..."
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                icon="🔍"
+                
               />
             </div>
 
@@ -152,7 +152,7 @@ const AdminLogsPage = () => {
             },
           ]}
           rows={filtered}
-          emptyState={<EmptyState icon="📊" title="No logs found" sub="Try adjusting filters." />}
+          emptyState={<EmptyState  title="No logs found" sub="Try adjusting filters." />}
         />
       )}
     </div>

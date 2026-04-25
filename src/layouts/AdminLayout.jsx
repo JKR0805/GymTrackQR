@@ -26,7 +26,7 @@ const AdminLayout = ({ children, user, onLogout, onNav, currentPage }) => {
           >
             {sidebarOpen ? "◁" : "▷"}
           </button>
-          <span className="brand-icon">🏋️</span>
+          <span className="brand-icon">️</span>
           <span className="brand-name">IRONTRACK</span>
           <span className="admin-pill">ADMIN</span>
         </div>

@@ -3,7 +3,7 @@ const ErrorBanner = ({ message }) => {
     return null;
   }
 
-  return <div className="error-banner">⚠️ {message}</div>;
+  return <div className="error-banner">️ {message}</div>;
 };
 
 export default ErrorBanner;

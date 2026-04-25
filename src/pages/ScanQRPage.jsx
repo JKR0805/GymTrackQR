@@ -167,7 +167,7 @@ const ScanQRPage = ({ onBack }) => {
       <Card className="scanner-shell">
         {state === "idle" ? (
           <div className="scanner-state idle">
-            <div className="scanner-emoji">📷</div>
+            <div className="scanner-emoji"></div>
             <p>Camera will activate when you start scanning</p>
             <Button variant="primary" size="lg" onClick={handleStartScan}>
               Start Scanner
@@ -194,7 +194,7 @@ const ScanQRPage = ({ onBack }) => {
 
         {state === "processing" ? (
           <div className="scanner-state scanning">
-            <div className="scanner-emoji">⏳</div>
+            <div className="scanner-emoji"></div>
             <p>Validating QR and recording attendance...</p>
             <Spinner size={20} />
           </div>
@@ -202,7 +202,7 @@ const ScanQRPage = ({ onBack }) => {
 
         {state === "success" ? (
           <div className="scanner-state success">
-            <div className="scanner-emoji">✅</div>
+            <div className="scanner-emoji"></div>
             <h2>{scanResult?.type}</h2>
             <p className="mono">{scanResult?.time}</p>
             <p>{scanResult?.date}</p>
@@ -211,7 +211,7 @@ const ScanQRPage = ({ onBack }) => {
 
         {state === "error" ? (
           <div className="scanner-state error">
-            <div className="scanner-emoji">❌</div>
+            <div className="scanner-emoji"></div>
             <h2>Scan Failed</h2>
             <p>{scanError || "Please try again with a valid gym QR."}</p>
           </div>
@@ -221,7 +221,7 @@ const ScanQRPage = ({ onBack }) => {
       {state === "success" ? (
         <Card className="scan-result-card">
           <div className="grow">
-            <div className="strong">✅ {scanResult?.type} Successful</div>
+            <div className="strong"> {scanResult?.type} Successful</div>
             <div className="mono muted">
               {scanResult?.member} · {scanResult?.time}
             </div>

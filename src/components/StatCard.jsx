@@ -8,7 +8,7 @@ const StatCard = ({ label, value, icon, color = "amber", delta }) => (
         <div className="stat-value">{value}</div>
         {delta ? <div className="stat-delta">{delta}</div> : null}
       </div>
-      <div className={`stat-icon stat-icon-${color}`}>{icon}</div>
+      {icon && <div className={`stat-icon stat-icon-${color}`}>{icon}</div>}
     </div>
   </Card>
 );

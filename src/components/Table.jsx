@@ -4,7 +4,7 @@ const Table = ({ columns, rows, emptyState }) => {
   if (!rows || rows.length === 0) {
     return (
       emptyState || (
-        <EmptyState icon="📋" title="No records found" sub="Nothing here yet." />
+        <EmptyState title="No records found" sub="Nothing here yet." />
       )
     );
   }

@@ -26,7 +26,7 @@ const MemberDashboard = ({ onNav }) => {
     <div className="page-stack fade-in">
       <div>
         <div className="muted-caps">{formatDateVerbose(new Date())}</div>
-        <h1 className="hero-title">Welcome, {userProfile.name?.split(" ")[0]} 💪</h1>
+        <h1 className="hero-title">Welcome, {userProfile.name?.split(" ")[0]} </h1>
       </div>
 
       <Card>
@@ -41,18 +41,18 @@ const MemberDashboard = ({ onNav }) => {
       </Card>
 
       <div className="grid-2">
-        <StatCard label="This Week" value={`${weekPresentDays} days`} icon="📅" color="amber" />
+        <StatCard label="This Week" value={`${weekPresentDays} days`}  color="amber" />
         <StatCard
           label="Last Session"
           value={lastLog?.duration || "-"}
-          icon="⏱️"
+
           color="green"
         />
       </div>
 
       {lastLog ? (
         <Card className="last-session-card">
-          <div className="status-icon">✅</div>
+          <div className="status-icon"></div>
           <div className="grow">
             <div className="strong">Last Check-in</div>
             <div className="mono muted">
@@ -64,24 +64,24 @@ const MemberDashboard = ({ onNav }) => {
       ) : (
         <Card>
           <EmptyState
-            icon="📭"
+            
             title="No attendance yet"
             sub="Your latest check-ins will appear here after scanning."
           />
         </Card>
       )}
 
-      {error ? <div className="error-banner">⚠️ {error}</div> : null}
+      {error ? <div className="error-banner">{error}</div> : null}
 
       <div className="grid-2 action-grid">
         <button className="action-card action-card-primary" onClick={() => onNav("scan")}> 
-          <span className="action-icon">📷</span>
+          <span className="action-icon"></span>
           <span className="action-title">Scan QR</span>
           <span className="action-sub">Check in / out</span>
         </button>
 
         <button className="action-card" onClick={() => onNav("member-logs")}> 
-          <span className="action-icon">📊</span>
+          <span className="action-icon"></span>
           <span className="action-title">My Logs</span>
           <span className="action-sub">View history</span>
         </button>

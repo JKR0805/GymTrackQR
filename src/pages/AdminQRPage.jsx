@@ -133,7 +133,7 @@ const AdminQRPage = () => {
       </div>
 
       <ErrorBanner message={error} />
-      {success ? <div className="success-banner">✅ {success}</div> : null}
+      {success ? <div className="success-banner"> {success}</div> : null}
 
       <div className="qr-admin-grid">
         <Card>

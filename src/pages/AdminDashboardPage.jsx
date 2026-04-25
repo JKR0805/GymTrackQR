@@ -78,9 +78,9 @@ const AdminDashboardPage = () => {
         </div>
       ) : (
         <div className="stats-grid stats-grid-3">
-          <StatCard label="Total Members" value={members.length} icon="👥" color="amber" />
-          <StatCard label="Active Members" value={activeMembers} icon="✅" color="green" />
-          <StatCard label="Today's Entries" value={entriesToday} icon="📋" color="blue" />
+          <StatCard label="Total Members" value={members.length}  color="amber" />
+          <StatCard label="Active Members" value={activeMembers}  color="green" />
+          <StatCard label="Today's Entries" value={entriesToday}  color="blue" />
         </div>
       )}
 
@@ -107,7 +107,7 @@ const AdminDashboardPage = () => {
           rows={todayLogs}
           emptyState={
             <EmptyState
-              icon="🏋️"
+
               title="No activity yet"
               sub="Today's check-ins will appear here."
             />

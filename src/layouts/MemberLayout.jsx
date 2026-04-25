@@ -4,7 +4,7 @@ const MemberLayout = ({ children, user, onLogout }) => (
   <div className="app-shell member-shell">
     <nav className="top-nav">
       <div className="brand-wrap">
-        <span className="brand-icon">🏋️</span>
+        <span className="brand-icon">️</span>
         <span className="brand-name">IRONTRACK</span>
       </div>
 

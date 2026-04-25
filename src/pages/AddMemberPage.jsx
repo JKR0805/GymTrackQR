@@ -92,7 +92,7 @@ const AddMemberPage = () => {
       </div>
 
       {status === "success" ? (
-        <div className="success-banner">✅ Member added successfully!</div>
+        <div className="success-banner"> Member added successfully!</div>
       ) : null}
 
       <ErrorBanner message={errorMessage} />

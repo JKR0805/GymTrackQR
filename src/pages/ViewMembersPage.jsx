@@ -210,7 +210,6 @@ const ViewMembersPage = () => {
               placeholder="Search by name or email..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              icon="🔍"
             />
           </div>
 
@@ -242,7 +241,6 @@ const ViewMembersPage = () => {
           rows={filteredMembers}
           emptyState={
             <EmptyState
-              icon="👥"
               title="No members found"
               sub="Try adjusting your search or filter."
             />
