@@ -278,7 +278,6 @@
 .stat-value {
   font-size: 28px;
   font-weight: 800;
-  font-family: "Syne", sans-serif;
   letter-spacing: -0.02em;
 }
 
@@ -346,7 +345,6 @@
 }
 
 .modal-header h3 {
-  font-family: "Syne", sans-serif;
   font-size: 16px;
 }
 
@@ -411,7 +409,7 @@
 }
 
 .table td.mono {
-  font-family: "DM Mono", monospace;
+  font-family: "JetBrains Mono", monospace;
 }
 
 /* Weekly Calendar */
@@ -466,7 +464,7 @@
 .week-day-date {
   font-size: 16px;
   font-weight: 700;
-  font-family: "DM Mono", monospace;
+  font-family: "JetBrains Mono", monospace;
   line-height: 1.2;
   color: var(--red);
 }

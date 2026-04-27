@@ -55,7 +55,6 @@
 }
 
 .login-title {
-  font-family: "Syne", sans-serif;
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -135,7 +134,6 @@
 }
 
 .action-title {
-  font-family: "Syne", sans-serif;
   font-size: 15px;
   font-weight: 800;
 }
@@ -199,7 +197,6 @@
 }
 
 .scanner-state.success h2 {
-  font-family: "Syne", sans-serif;
   font-size: 22px;
   color: var(--green);
 }
@@ -209,7 +206,6 @@
 }
 
 .scanner-state.error h2 {
-  font-family: "Syne", sans-serif;
   color: var(--red);
 }
 

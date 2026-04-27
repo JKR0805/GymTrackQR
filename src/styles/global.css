@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap");
 
 :root {
   --bg: #080c16;
@@ -43,7 +43,7 @@ html {
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: "DM Sans", sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 14px;
   overflow-x: hidden;
   overscroll-behavior-y: none;
@@ -203,7 +203,6 @@ button {
 }
 
 .section-heading {
-  font-family: "Syne", sans-serif;
   font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -216,7 +215,6 @@ button {
 }
 
 .panel-title {
-  font-family: "Syne", sans-serif;
   font-size: 18px;
   font-weight: 700;
 }
@@ -247,14 +245,13 @@ button {
 }
 
 .hero-title {
-  font-family: "Syne", sans-serif;
   font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
 
 .mono {
-  font-family: "DM Mono", monospace;
+  font-family: "JetBrains Mono", monospace;
 }
 
 .strong {

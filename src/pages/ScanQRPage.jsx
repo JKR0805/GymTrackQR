@@ -135,7 +135,6 @@ const ScanQRPage = ({ onBack }) => {
           {
             fps: 10,
             qrbox: { width: 220, height: 220 },
-            aspectRatio: 1,
             disableFlip: false,
           },
           (decodedText) => {
