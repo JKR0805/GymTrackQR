@@ -36,11 +36,18 @@ body,
   min-height: 100%;
 }
 
+html {
+  overscroll-behavior: none;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
   font-family: "DM Sans", sans-serif;
   font-size: 14px;
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+  touch-action: pan-y;
 }
 
 button,

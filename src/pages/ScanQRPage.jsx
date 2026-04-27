@@ -123,36 +123,38 @@ const ScanQRPage = ({ onBack }) => {
     scanHandledRef.current = false;
     setState("scanning");
 
-    try {
-      await stopScanner();
+    setTimeout(async () => {
+      try {
+        await stopScanner();
 
-      const scanner = new Html5Qrcode(READER_ID);
-      scannerRef.current = scanner;
+        const scanner = new Html5Qrcode(READER_ID);
+        scannerRef.current = scanner;
 
-      await scanner.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 220, height: 220 },
-          aspectRatio: 1,
-          disableFlip: false,
-        },
-        (decodedText) => {
-          handleScanSuccess(decodedText);
-        },
-        () => {
-          // Ignore transient decode errors while scanning.
-        }
-      );
-    } catch (error) {
-      setScanError(
-        error?.message ||
-          "Unable to start camera scanner. Allow camera access and try again."
-      );
-      setState("error");
-      scanHandledRef.current = false;
-      await stopScanner();
-    }
+        await scanner.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: { width: 220, height: 220 },
+            aspectRatio: 1,
+            disableFlip: false,
+          },
+          (decodedText) => {
+            handleScanSuccess(decodedText);
+          },
+          () => {
+            // Ignore transient decode errors while scanning.
+          }
+        );
+      } catch (error) {
+        setScanError(
+          error?.message ||
+            "Unable to start camera scanner. Allow camera access and try again."
+        );
+        setState("error");
+        scanHandledRef.current = false;
+        await stopScanner();
+      }
+    }, 50);
   };
 
   return (
