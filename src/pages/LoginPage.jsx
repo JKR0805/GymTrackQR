@@ -87,10 +87,6 @@ const LoginPage = () => {
               {authActionLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
-
-          <div className="hint-panel">
-            Use valid Firebase Auth credentials linked to documents in /users.
-          </div>
         </Card>
       </div>
     </div>
