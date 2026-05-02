@@ -10,7 +10,10 @@ import {
   createOrRotateActiveQrCode,
   getActiveQrCode,
   toQrDataUrl,
+  fetchSignedPayloadFromFunction,
+  updateActiveQrGeo,
 } from "../services/qrService";
+
 
 const toReadableTime = (value) => {
   if (!value) {
@@ -28,7 +31,7 @@ const toReadableTime = (value) => {
 };
 
 const AdminQRPage = () => {
-  const { userProfile } = useAuth();
+  const { userProfile, firebaseUser } = useAuth();
 
   const [activeQr, setActiveQr] = useState(null);
   const [qrImageUrl, setQrImageUrl] = useState("");
@@ -42,15 +45,26 @@ const AdminQRPage = () => {
       setQrImageUrl("");
       return;
     }
+    // Prefer server-signed QR payload from Cloud Function if available.
+    let payloadText;
+    try {
+      if (firebaseUser) {
+        const idToken = await firebaseUser.getIdToken();
+        const signed = await fetchSignedPayloadFromFunction(idToken);
+        payloadText = JSON.stringify(signed);
+      }
+    } catch {
+      // fallback to client-side build when function not available
+    }
 
-    const payloadText = buildQrPayloadText({
-      qrCodeId: qrDoc.id,
-      token: qrDoc.token,
-    });
+    // Always fall back to client-side build if server path didn't produce a payload
+    if (!payloadText) {
+      payloadText = await buildQrPayloadText({ qrCodeId: qrDoc.id, token: qrDoc.token });
+    }
 
     const url = await toQrDataUrl(payloadText);
     setQrImageUrl(url);
-  }, []);
+  }, [firebaseUser]);
 
   const loadActiveQr = useCallback(async () => {
     setLoading(true);
@@ -89,6 +103,26 @@ const AdminQRPage = () => {
       setError(error?.message || "Failed to generate QR code.");
     } finally {
       setRotating(false);
+    }
+  };
+
+  const [geoState, setGeoState] = useState({ lat: "", lng: "", radiusMeters: 200 });
+
+  useEffect(() => {
+    if (!activeQr?.geo) return;
+    setGeoState({ lat: activeQr.geo.lat || "", lng: activeQr.geo.lng || "", radiusMeters: activeQr.geo.radiusMeters || 200 });
+  }, [activeQr]);
+
+  const handleSaveGeo = async () => {
+    try {
+      const lat = Number(geoState.lat);
+      const lng = Number(geoState.lng);
+      const radiusMeters = Number(geoState.radiusMeters || 200);
+      const updated = await updateActiveQrGeo({ lat, lng, radiusMeters });
+      setActiveQr(updated);
+      setSuccess("Gym location saved.");
+    } catch (err) {
+      setError(err?.message || "Failed to save location.");
     }
   };
 
@@ -173,6 +207,34 @@ const AdminQRPage = () => {
                 <span className="summary-value mono">{item.value}</span>
               </div>
             ))}
+          </div>
+
+          <div className="top-gap-sm">
+            <div className="section-sub">Gym location (optional)</div>
+            <div className="row gap-sm top-gap-sm">
+              <input
+                className="input"
+                placeholder="Latitude"
+                value={geoState.lat}
+                onChange={(e) => setGeoState((s) => ({ ...s, lat: e.target.value }))}
+              />
+              <input
+                className="input"
+                placeholder="Longitude"
+                value={geoState.lng}
+                onChange={(e) => setGeoState((s) => ({ ...s, lng: e.target.value }))}
+              />
+              <input
+                className="input"
+                placeholder="Radius meters"
+                value={geoState.radiusMeters}
+                onChange={(e) => setGeoState((s) => ({ ...s, radiusMeters: e.target.value }))}
+              />
+            </div>
+            <div className="row gap-sm top-gap-sm">
+              <Button variant="primary" onClick={handleSaveGeo}>Save Location</Button>
+            </div>
+            <div className="hint-panel top-gap-sm">Set the gym coordinates to enable geofencing for scans.</div>
           </div>
 
           <div className="hint-panel top-gap-sm">

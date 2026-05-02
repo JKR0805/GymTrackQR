@@ -18,8 +18,10 @@ import {
   parseDateAndTime,
   toDateKey,
 } from "../utils/date";
+import { getUserByUid } from "./userService";
 
 const ATTENDANCE_COLLECTION = "attendance";
+
 
 const toLog = (snap) => {
   const data = snap.data();
@@ -49,6 +51,9 @@ const buildScanEntryPayload = ({ memberId, memberName, qrCodeId }) => {
     timestamp: Timestamp.fromDate(now),
   };
 };
+
+const COOLDOWN_SECONDS = 90; // ignore scans within 1.5 minutes
+const AUTO_CLOSE_HOURS = 6; // auto-close sessions older than this
 
 export const getLastAttendanceRecord = async (memberId) => {
   const recordQuery = query(
@@ -80,7 +85,8 @@ export const createEntryRecord = async ({ memberId, memberName, qrCodeId }) => {
 
 export const closeOpenRecord = async (record) => {
   const now = new Date();
-  const entryDateTime = parseDateAndTime(record.date, record.entryTime) || record.timestamp;
+  // Always use the Firestore timestamp for duration — it's the most accurate source
+  const entryDateTime = record.timestamp instanceof Date ? record.timestamp : new Date(record.timestamp);
   const durationMinutes = Math.max(
     1,
     Math.round((now.getTime() - entryDateTime.getTime()) / 60000)
@@ -104,10 +110,59 @@ export const recordAttendanceFromScan = async ({ uid, name, qrCodeId }) => {
   if (!qrCodeId) {
     throw new Error("Scan rejected because QR context is missing.");
   }
-
   const lastRecord = await getLastAttendanceRecord(uid);
 
+  // cooldown protection
+  if (lastRecord && lastRecord.timestamp) {
+    const lastTs = lastRecord.timestamp instanceof Timestamp ? lastRecord.timestamp.toDate() : lastRecord.timestamp;
+    const now = new Date();
+    const diffSec = Math.round((now.getTime() - lastTs.getTime()) / 1000);
+    if (diffSec < COOLDOWN_SECONDS) {
+      throw new Error("Please wait before scanning again.");
+    }
+  }
+
+  // load member profile and validate membership for ENTRY
+  const memberProfile = await getUserByUid(uid);
+
+  // if there is an open session
   if (lastRecord && !lastRecord.exitTime) {
+    // auto-close long sessions first
+    const entryTs = lastRecord.timestamp instanceof Timestamp ? lastRecord.timestamp.toDate() : lastRecord.timestamp;
+    const hoursOpen = (Date.now() - entryTs.getTime()) / (1000 * 60 * 60);
+
+    if (hoursOpen >= AUTO_CLOSE_HOURS) {
+      // mark previous as auto-closed
+      const closed = await closeOpenRecord(lastRecord);
+      await updateDoc(doc(db, ATTENDANCE_COLLECTION, lastRecord.id), { autoClosed: true });
+
+      // create a fresh entry for this scan — validate membership first
+      if (!memberProfile?.membershipExpiry) {
+        throw new Error("No membership expiry set. Contact admin.");
+      }
+      const todayKey = toDateKey(new Date());
+      if (memberProfile.membershipExpiry < todayKey) {
+        throw new Error("Membership expired. Please renew.");
+      }
+
+      const created = await createEntryRecord({
+        memberId: uid,
+        memberName: name,
+        qrCodeId,
+      });
+
+      return {
+        action: "ENTRY",
+        displayType: "Check In",
+        member: name,
+        date: created.date,
+        time: formatTime12(parseDateAndTime(created.date, created.entryTime)),
+        log: created,
+        note: "Previous session auto-closed",
+      };
+    }
+
+    // normal exit flow
     const updated = await closeOpenRecord(lastRecord);
 
     return {
@@ -118,6 +173,15 @@ export const recordAttendanceFromScan = async ({ uid, name, qrCodeId }) => {
       time: formatTime12(parseDateAndTime(updated.date, updated.exitTime)),
       log: updated,
     };
+  }
+
+  // ENTRY flow - validate membership expiry
+  if (!memberProfile?.membershipExpiry) {
+    throw new Error("No membership expiry set. Contact admin.");
+  }
+  const todayKey = toDateKey(new Date());
+  if (memberProfile.membershipExpiry < todayKey) {
+    throw new Error("Membership expired. Please renew.");
   }
 
   const created = await createEntryRecord({
@@ -134,6 +198,43 @@ export const recordAttendanceFromScan = async ({ uid, name, qrCodeId }) => {
     time: formatTime12(parseDateAndTime(created.date, created.entryTime)),
     log: created,
   };
+};
+
+export const getActiveSessions = async () => {
+  const activeQuery = query(
+    collection(db, ATTENDANCE_COLLECTION),
+    where("exitTime", "==", null),
+    orderBy("timestamp", "desc")
+  );
+
+  const snapshot = await getDocs(activeQuery);
+  return snapshot.docs.map(toLog);
+};
+
+export const getPeakHours = (logs = []) => {
+  const counts = {};
+  logs.forEach((log) => {
+    const hour = new Date(log.timestamp).getHours();
+    counts[hour] = (counts[hour] || 0) + 1;
+  });
+  return counts; // caller can map to array or pick top N
+};
+
+export const exportLogsCsv = async (logs = null) => {
+  const rows = logs || (await getAllAttendanceLogs());
+  const header = ["Name", "Date", "Entry", "Exit", "Duration"].join(",");
+  const lines = rows.map((r) => {
+    const name = (r.memberName || "").replace(/"/g, '""');
+    return [
+      `"${name}"`,
+      r.date,
+      r.entryTime || "",
+      r.exitTime || "",
+      r.duration || "",
+    ].join(",");
+  });
+
+  return [header].concat(lines).join("\n");
 };
 
 export const getMemberAttendanceLogs = async (memberId, filters = {}) => {

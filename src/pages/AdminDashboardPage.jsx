@@ -8,7 +8,8 @@ import Table from "../components/Table";
 import { useAttendance } from "../hooks/useAttendance";
 import { getMembers } from "../services/userService";
 import { calculateTodayEntries } from "../utils/attendance";
-import { formatDate, toDateKey } from "../utils/date";
+import { getActiveSessions, getPeakHours, exportLogsCsv } from "../services/attendanceService";
+import { formatDate, formatTime12, formatDurationFromMinutes, toDateKey } from "../utils/date";
 
 const UsersIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -38,6 +39,8 @@ const AdminDashboardPage = () => {
   const [members, setMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(true);
   const [localError, setLocalError] = useState("");
+  const [activeSessions, setActiveSessions] = useState([]);
+  const [peakCounts, setPeakCounts] = useState({});
 
   useEffect(() => {
     let active = true;
@@ -47,9 +50,15 @@ const AdminDashboardPage = () => {
       setLocalError("");
 
       try {
-        const [, fetchedMembers] = await Promise.all([loadAdminLogs(), getMembers()]);
+        const [, fetchedMembers, sessions] = await Promise.all([
+          loadAdminLogs(),
+          getMembers(),
+          getActiveSessions(),
+        ]);
+
         if (active) {
           setMembers(fetchedMembers);
+          setActiveSessions(sessions);
         }
       } catch (error) {
         if (active) {
@@ -69,6 +78,10 @@ const AdminDashboardPage = () => {
     };
   }, [loadAdminLogs]);
 
+  useEffect(() => {
+    setPeakCounts(getPeakHours(adminLogs || []));
+  }, [adminLogs]);
+
   const todayKey = toDateKey(new Date());
 
   const todayLogs = useMemo(
@@ -76,14 +89,35 @@ const AdminDashboardPage = () => {
     [adminLogs, todayKey]
   );
 
-  const activeMembers = useMemo(
-    () => members.filter((member) => member.status === "active").length,
-    [members]
-  );
+  const activeMembers = useMemo(() => activeSessions.length, [activeSessions]);
 
   const entriesToday = calculateTodayEntries(adminLogs, todayKey);
 
   const loading = adminLogsLoading || membersLoading;
+
+  const handleExportCsv = async () => {
+    try {
+      const csv = await exportLogsCsv(adminLogs);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `gym-logs-${todayKey}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const refreshActiveSessions = async () => {
+    try {
+      const sessions = await getActiveSessions();
+      setActiveSessions(sessions);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <div className="page-stack fade-in">
@@ -107,6 +141,34 @@ const AdminDashboardPage = () => {
       )}
 
       <ErrorBanner message={error || localError} />
+
+      <div className="row gap-sm top-gap-sm">
+        <button className="btn small" onClick={handleExportCsv}>Export Logs CSV</button>
+        <button className="btn small ghost" onClick={refreshActiveSessions}>Refresh Active Sessions</button>
+      </div>
+
+      <div>
+        <h2 className="panel-title">Active Sessions</h2>
+        {activeSessions.length === 0 ? (
+          <EmptyState title="No one is inside" sub="Active members will appear here." />
+        ) : (
+          <Table
+            columns={[
+              { key: "memberName", label: "Member" },
+              { key: "entryTime", label: "Entry", render: (v) => <span className="mono">{v || "-"}</span> },
+              { key: "duration", label: "Duration", render: (r) => <Badge label={r} color="amber" /> },
+            ]}
+            rows={activeSessions.map((s) => ({
+              id: s.id,
+              memberName: s.memberName,
+              entryTime: s.entryTime || (s.timestamp ? new Date(s.timestamp) : "-"),
+              duration: formatDurationFromMinutes(
+                Math.round(((new Date()).getTime() - (s.timestamp ? new Date(s.timestamp).getTime() : 0)) / 60000)
+              ),
+            }))}
+          />
+        )}
+      </div>
 
       <div>
         <h2 className="panel-title">Today's Activity</h2>

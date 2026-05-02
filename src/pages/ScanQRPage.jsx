@@ -8,6 +8,7 @@ import {
   parseQrPayloadText,
   validateQrPayloadAgainstActive,
 } from "../services/qrService";
+import { getDistanceFromLatLonInMeters } from "../utils/geo";
 import { formatDate } from "../utils/date";
 
 const READER_ID = "member-qr-reader";
@@ -97,13 +98,36 @@ const ScanQRPage = ({ onBack }) => {
 
     try {
       const parsedPayload = parseQrPayloadText(decodedText);
-      const validation = await validateQrPayloadAgainstActive(parsedPayload);
+      const validation = await validateQrPayloadAgainstActive(parsedPayload, 60);
 
       if (!validation.valid) {
         throw new Error(validation.reason);
       }
 
-      const result = await runScan({ qrCodeId: validation.qrCodeId });
+      // Optional geolocation gate: if QR doc has `geo: { lat, lng }` then require user to be nearby
+      if (validation.activeCode && validation.activeCode.geo) {
+        if (!navigator.geolocation) {
+          throw new Error("Geolocation not available. Cannot validate location.");
+        }
+
+        const pos = await new Promise((res, rej) =>
+          navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 })
+        );
+
+        const { latitude, longitude } = pos.coords;
+        const distance = getDistanceFromLatLonInMeters(
+          latitude,
+          longitude,
+          validation.activeCode.geo.lat,
+          validation.activeCode.geo.lng
+        );
+
+        if (distance > (validation.activeCode.geo.radiusMeters || 200)) {
+          throw new Error("You must be at the gym to scan.");
+        }
+      }
+
+      const result = await runScan({ qrCodeId: validation.qrCodeId, t: parsedPayload.t, s: parsedPayload.s });
       setScanResult({
         type: result.displayType,
         member: result.member,
