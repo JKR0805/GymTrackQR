@@ -53,7 +53,7 @@ const buildScanEntryPayload = ({ memberId, memberName, qrCodeId }) => {
 };
 
 const COOLDOWN_SECONDS = 90; // ignore scans within 1.5 minutes
-const AUTO_CLOSE_HOURS = 6; // auto-close sessions older than this
+const AUTO_CLOSE_HOURS = 4; // auto-close sessions older than this
 
 export const getLastAttendanceRecord = async (memberId) => {
   const recordQuery = query(
@@ -209,6 +209,25 @@ export const getActiveSessions = async () => {
 
   const snapshot = await getDocs(activeQuery);
   return snapshot.docs.map(toLog);
+};
+
+export const autoCloseStaleSessions = async () => {
+  const openSessions = await getActiveSessions();
+  const now = Date.now();
+  
+  const staleSessions = openSessions.filter((session) => {
+    const entryTs = session.timestamp instanceof Date ? session.timestamp : new Date(session.timestamp);
+    const hoursOpen = (now - entryTs.getTime()) / (1000 * 60 * 60);
+    return hoursOpen >= AUTO_CLOSE_HOURS;
+  });
+
+  const promises = staleSessions.map(async (session) => {
+    await closeOpenRecord(session);
+    await updateDoc(doc(db, ATTENDANCE_COLLECTION, session.id), { autoClosed: true });
+  });
+
+  await Promise.all(promises);
+  return staleSessions.length;
 };
 
 export const getPeakHours = (logs = []) => {

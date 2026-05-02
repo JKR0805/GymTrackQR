@@ -9,7 +9,7 @@ import Table from "../components/Table";
 import { useAttendance } from "../hooks/useAttendance";
 import { getMembers } from "../services/userService";
 import { calculateTodayEntries } from "../utils/attendance";
-import { getActiveSessions, getPeakHours, exportLogsCsv } from "../services/attendanceService";
+import { getActiveSessions, getPeakHours, exportLogsCsv, autoCloseStaleSessions } from "../services/attendanceService";
 import { formatDate, formatTime12, formatDurationFromMinutes, toDateKey } from "../utils/date";
 
 const UsersIcon = () => (
@@ -51,6 +51,7 @@ const AdminDashboardPage = () => {
       setLocalError("");
 
       try {
+        await autoCloseStaleSessions();
         const [, fetchedMembers, sessions] = await Promise.all([
           loadAdminLogs(),
           getMembers(),

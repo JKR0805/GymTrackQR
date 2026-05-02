@@ -157,7 +157,7 @@ exports.validateScan = functions.https.onRequest(async (req, res) => {
       // if session is older than AUTO_CLOSE_HOURS, auto-close and create new entry
       const entryTs = lastRecord.timestamp && lastRecord.timestamp.toDate ? lastRecord.timestamp.toDate() : new Date(lastRecord.timestamp);
       const hoursOpen = (Date.now() - entryTs.getTime()) / (1000 * 60 * 60);
-      if (hoursOpen >= 6) {
+      if (hoursOpen >= 4) {
         // close previous
         const durationMinutes = Math.max(1, Math.round((Date.now() - entryTs.getTime()) / 60000));
         await ATT.doc(lastRecord.id).update({ exitTime: formatTime24(new Date()), duration: formatDurationFromMinutes(durationMinutes), updatedAt: now, autoClosed: true });
