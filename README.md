@@ -1,82 +1,92 @@
 # IRONTRACK Gym Checkin (GymTrackQR)
 
-IRONTRACK Gym Checkin is a robust, responsive web application designed to streamline gym attendance tracking using dynamically generated QR codes. Built on React and Firebase, the application provides separate workflows for gym administrators and gym members, ensuring secure and efficient access management without the need for specialized hardware.
+IRONTRACK Gym Checkin is a production-ready, highly secure web application designed to manage gym attendance through dynamic, cryptographically signed QR codes. Built with React and Firebase, the application enforces stringent access control through server-side validation, short-lived rotating QR payloads, and geolocation boundaries. 
 
 ## Table of Contents
 
+- [Architecture Overview](#architecture-overview)
 - [Core Features](#core-features)
 - [Technology Stack](#technology-stack)
+- [Security Model](#security-model)
 - [Prerequisites](#prerequisites)
 - [Local Development Setup](#local-development-setup)
 - [Environment Configuration](#environment-configuration)
-- [Firebase Setup Guide](#firebase-setup-guide)
-- [Application Security](#application-security)
+- [Firebase & Cloud Functions Setup](#firebase--cloud-functions-setup)
 - [Deployment](#deployment)
+
+## Architecture Overview
+
+The system operates on a highly decoupled client-server architecture:
+- **Client (React):** Handles UI, camera-based QR scanning (`html5-qrcode`), location services, and basic state management.
+- **Backend (Firebase Cloud Functions):** Enforces all critical business logic. It handles the generation of cryptographically signed payloads, time-window validation, and geolocation verification to ensure the client cannot spoof check-ins.
+- **Database (Firestore):** Stores member profiles, attendance logs, and active token states. It is protected by strict Security Rules ensuring users can only read/write their own data.
 
 ## Core Features
 
 ### Administrator Workflows
-- **Dashboard Overview:** Real-time analytics displaying total members, active memberships, and today's facility entries.
-- **Dynamic QR Generation:** Administrators can generate, rotate, and download secure, time-sensitive QR codes that act as the physical entry point for the gym.
-- **Member Management:** Full CRUD (Create, Read, Update, Delete) capabilities for user accounts, including setting membership expiry dates and toggling active/expired statuses.
-- **Global Attendance Logs:** Comprehensive, filterable historical logs of all member check-ins and check-outs.
+- **Dynamic QR Management:** Generates rotating QR codes that auto-refresh every 30 seconds. Payloads contain a timestamp and a signature.
+- **Master QR Code:** Administrators can generate and download a static, non-expiring "Master QR" intended for physical printing on the gym wall. This remains valid until the administrative token is manually rotated.
+- **Geofencing:** Integration with Leaflet maps allows administrators to define a specific GPS coordinate and radius (e.g., 200 meters). Scans occurring outside this radius are rejected.
+- **Attendance & Member Management:** Full dashboard for viewing real-time active sessions, historic logs, and member subscription statuses (Active/Expired).
 
 ### Member Workflows
-- **Mobile-Optimized Scanner:** A highly responsive, mobile-first QR scanning interface that utilizes the user's device camera to read the gym's physical QR code.
-- **Automated Check-in/Check-out:** Seamlessly logs entry and exit times based on the user's current status when a valid QR code is scanned.
-- **Personal Dashboard:** A summarized view of the user's own attendance history and membership standing.
-- **Personal Logs:** A detailed, chronological history of the user's past visits.
+- **Mobile Scanner Interface:** A responsive, portrait-optimized camera scanner that requests geolocation permissions upon use.
+- **Member Dashboard:** Displays real-time membership validity, days remaining, and a weekly calendar view of attendance.
+- **Automated Logging:** The system automatically determines if a scan is an entry or an exit based on the member's current active session.
 
 ## Technology Stack
 
-- **Frontend Framework:** React 18
-- **Build Tool:** Vite
-- **Backend & Database:** Firebase (Cloud Firestore)
-- **Authentication:** Firebase Authentication (Email/Password)
-- **QR Code Generation:** qrcode
-- **QR Code Scanning:** html5-qrcode
-- **Styling:** Custom Vanilla CSS (Responsive, Mobile-First)
+- **Frontend:** React 18, Vite, Vanilla CSS (Mobile-First)
+- **Backend Environment:** Firebase Cloud Functions (Node.js)
+- **Database & Auth:** Cloud Firestore, Firebase Authentication
+- **Mapping & Geolocation:** Leaflet
+- **QR Operations:** `qrcode` (generation), `html5-qrcode` (scanning)
+- **Cryptography:** Native Node.js `crypto` (SHA-256 hashing)
+
+## Security Model
+
+The application mitigates common QR vulnerabilities (such as screenshot sharing or replay attacks) through the following mechanisms:
+
+1. **Short-Lived Payloads:** The Admin dashboard automatically refreshes the QR code every 30 seconds.
+2. **Server-Side Signature Validation:** The QR payload contains `t` (timestamp) and `s` (SHA-256 signature). When scanned, the Cloud Function recalculates the signature using a secure server-side token. If the signature is invalid or the timestamp is older than 60 seconds, the check-in is rejected.
+3. **Master QR Sentinel:** The Master QR uses `t=0` as a sentinel value. While it bypasses the 60-second time check, it still requires a valid signature tied to the current active token.
+4. **Geolocation Gate:** If geofencing is enabled by the admin, the client must submit their GPS coordinates during the scan. The Cloud Function verifies the Haversine distance before approving the scan.
 
 ## Prerequisites
 
-Before running this project, ensure you have the following installed:
-- Node.js (v16.0.0 or higher recommended)
-- npm (Node Package Manager)
-- A Google Firebase Account
+- Node.js (v18.0.0 or higher recommended for Cloud Functions)
+- npm
+- Firebase CLI (`npm install -g firebase-tools`)
+- A Google Firebase Account on the **Blaze (Pay-as-you-go)** plan (required for Cloud Functions).
 
 ## Local Development Setup
 
 1. **Clone the Repository**
    Navigate to the project directory in your terminal.
 
-2. **Install Dependencies**
-   Run the following command to install all necessary packages:
+2. **Install Frontend Dependencies**
    ```bash
    npm install
    ```
 
-3. **Configure Environment Variables**
-   Create a `.env` file in the root directory based on the provided `.env.example`. Detailed instructions are available in the [Environment Configuration](#environment-configuration) section below.
-
-4. **Add Firebase Admin Credentials**
-   For the database seeding script to work, place your Firebase `serviceAccountKey.json` file in the project root, or specify the exact path in your `.env` file using the `FIREBASE_SERVICE_ACCOUNT_PATH` variable.
-
-5. **Seed the Database (Initial Setup)**
-   Populate your Firestore database with the required administrative roles and sample users by running:
+3. **Install Backend Dependencies**
    ```bash
-   npm run seed:firestore
+   cd functions
+   npm install
+   cd ..
    ```
 
-6. **Start the Development Server**
-   Launch the Vite development server:
+4. **Environment Variables**
+   Create a `.env` file in the root directory based on `.env.example`.
+
+5. **Start the Development Server**
    ```bash
    npm run dev
    ```
-   The application will be accessible at `http://localhost:5173`.
 
 ## Environment Configuration
 
-Create a `.env` file in the root directory of your project. This file must contain your Firebase client configuration details.
+Create a `.env` file in the root directory. Ensure it contains your Firebase client configuration and the URLs for your deployed Cloud Functions.
 
 ```env
 VITE_FIREBASE_API_KEY="your_api_key_here"
@@ -85,39 +95,37 @@ VITE_FIREBASE_PROJECT_ID="your_project_id"
 VITE_FIREBASE_STORAGE_BUCKET="your_project_id.appspot.com"
 VITE_FIREBASE_MESSAGING_SENDER_ID="your_messaging_sender_id"
 VITE_FIREBASE_APP_ID="your_app_id"
-VITE_FIREBASE_MEASUREMENT_ID="your_measurement_id"
 
-# Optional: Set this if your service account key is located elsewhere
-FIREBASE_SERVICE_ACCOUNT_PATH="./serviceAccountKey.json"
+# Cloud Function Endpoints
+VITE_GENERATE_QR_URL="https://us-central1-your-project.cloudfunctions.net/generateQrPayload"
+VITE_VALIDATE_SCAN_URL="https://us-central1-your-project.cloudfunctions.net/validateScan"
+
 ```
 
-## Firebase Setup Guide
+## Firebase & Cloud Functions Setup
 
-To ensure the application functions correctly, you must configure your Firebase project with the following settings:
+1. **Firestore Rules & Indexes:**
+   Deploy the security rules and required composite indexes:
+   ```bash
+   firebase deploy --only firestore
+   ```
+   *Note: If queries fail during testing, check the Firebase Console logs to build the exact composite indexes requested via the provided URL.*
 
-1. **Authentication:**
-   - Navigate to Authentication > Sign-in method.
-   - Enable the "Email/Password" provider.
-   - Under Settings > Authorized Domains, ensure your production domains (and `localhost`) are listed.
+2. **Deploy Cloud Functions:**
+   The backend validation logic must be deployed to Firebase.
+   ```bash
+   firebase deploy --only functions
+   ```
 
-2. **Firestore Database:**
-   - Create a new Firestore database.
-   - Ensure the database is operating in Native mode.
-   - Apply the security rules defined in the `firestore.rules` file located in the root of this repository. These rules enforce role-based access control and protect sensitive user data.
-
-## Application Security
-
-The application utilizes a secure, rotating QR payload system. 
-- The generated QR codes do not contain static URLs. Instead, they contain a unique, rotatable token payload.
-- When a member scans the code, the client verifies the token against the active token stored securely in Firestore.
-- Firestore Security Rules strictly prohibit members from reading the raw QR tokens directly, preventing malicious actors from cloning the code remotely. The token validation is handled securely.
+3. **Authentication:**
+   Enable "Email/Password" provider in the Firebase Authentication console.
 
 ## Deployment
 
-To prepare the application for production deployment, run the build command:
+To prepare the frontend for production deployment:
 
 ```bash
 npm run build
 ```
 
-This will generate an optimized, minified production build in the `dist` directory. You can deploy this directory to any static hosting provider, such as Vercel, Netlify, or Firebase Hosting. Ensure that you have appropriately configured your environment variables in your hosting provider's dashboard prior to deployment.
+This generates an optimized build in the `dist` directory. You can deploy this via Vercel, Netlify, or Firebase Hosting. If deploying to Vercel, the included `vercel.json` ensures that client-side routing falls back to `index.html` seamlessly. Ensure all `VITE_` prefixed environment variables are added to your hosting provider's dashboard.
