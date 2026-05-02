@@ -244,7 +244,7 @@ const AdminQRPage = () => {
             <div className="center-note">No active QR found yet. Generate one to begin scanning.</div>
           )}
 
-          <div className="row gap-sm top-gap-sm">
+          <div className="row wrap gap-sm top-gap-sm">
             <Button variant="primary" onClick={handleRotateQr} disabled={rotating}>
               {rotating ? <Spinner size={15} color="#1a0f00" /> : null}
               {rotating ? "Generating..." : activeQr ? "Rotate QR" : "Create QR"}
@@ -316,7 +316,7 @@ const AdminQRPage = () => {
             </div>
           ) : null}
 
-          <div className="row gap-sm top-gap-sm">
+          <div className="row wrap gap-sm top-gap-sm">
             <Button variant="primary" onClick={handleSaveGeo} disabled={!geoState.lat || !geoState.lng}>
               Save Location
             </Button>

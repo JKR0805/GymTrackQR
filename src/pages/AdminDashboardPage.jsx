@@ -143,7 +143,7 @@ const AdminDashboardPage = () => {
 
       <ErrorBanner message={error || localError} />
 
-      <div className="row gap-sm top-gap-sm">
+      <div className="row wrap gap-sm top-gap-sm">
         <Button variant="primary" size="sm" onClick={handleExportCsv}>Export Logs CSV</Button>
         <Button variant="ghost" size="sm" onClick={refreshActiveSessions}>Refresh Sessions</Button>
       </div>

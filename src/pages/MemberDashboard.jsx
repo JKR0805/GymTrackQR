@@ -22,6 +22,36 @@ const MemberDashboard = ({ onNav }) => {
   const lastLog = memberLogs[0];
   const weekPresentDays = weekDays.filter((day) => day.present).length;
 
+  const membershipDetails = useMemo(() => {
+    const isActive = userProfile.status === "active";
+    const statusText = isActive ? "Active" : "Expired";
+    const color = isActive ? "green" : "red";
+    const hexColor = isActive ? "var(--green)" : "var(--red)";
+    
+    let deltaText = "N/A";
+    if (userProfile.membershipExpiry) {
+      const expiryDate = new Date(userProfile.membershipExpiry);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      expiryDate.setHours(0, 0, 0, 0);
+      
+      const diffTime = expiryDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      const dateStr = formatDate(userProfile.membershipExpiry);
+      
+      if (diffDays > 0) {
+        deltaText = `Till ${dateStr} (${diffDays} days left)`;
+      } else if (diffDays === 0) {
+        deltaText = `Expires today`;
+      } else {
+        deltaText = `Expired on ${dateStr}`;
+      }
+    }
+    
+    return { statusText, color, hexColor, deltaText };
+  }, [userProfile]);
+
   return (
     <div className="page-stack fade-in">
       <div>
@@ -40,13 +70,18 @@ const MemberDashboard = ({ onNav }) => {
         )}
       </Card>
 
-      <div className="grid-2">
-        <StatCard label="This Week" value={`${weekPresentDays} days`}  color="amber" />
+      <div className="stats-grid stats-grid-3">
+        <StatCard label="This Week" value={`${weekPresentDays} days`} color="amber" />
         <StatCard
           label="Last Session"
           value={lastLog?.duration || "-"}
-
           color="green"
+        />
+        <StatCard
+          label="Membership Validity"
+          value={<span style={{ color: membershipDetails.hexColor }}>{membershipDetails.statusText}</span>}
+          color={membershipDetails.color}
+          delta={membershipDetails.deltaText}
         />
       </div>
 

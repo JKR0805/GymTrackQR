@@ -282,7 +282,7 @@
 }
 
 .stat-delta {
-  color: var(--green);
+  color: var(--text-dim);
   font-size: 11px;
   margin-top: 4px;
 }

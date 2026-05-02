@@ -266,6 +266,10 @@ button {
   font-size: 12px;
 }
 
+.text-xl {
+  font-size: 18px;
+}
+
 .min-w-180 {
   min-width: 180px;
 }
