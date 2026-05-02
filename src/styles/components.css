@@ -519,3 +519,55 @@
 .dot-red {
   background: var(--red);
 }
+
+/* Map Picker */
+.map-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.map-picker-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.map-picker-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.geo-coords-display {
+  padding: 8px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+/* Leaflet overrides for dark theme */
+.leaflet-container {
+  background: var(--surface2);
+  font-family: inherit;
+}
+
+.leaflet-control-zoom a {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: var(--surface2) !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(15, 20, 34, 0.8) !important;
+  color: var(--text-dim) !important;
+  font-size: 10px !important;
+}
+
+.leaflet-control-attribution a {
+  color: var(--text-muted) !important;
+}

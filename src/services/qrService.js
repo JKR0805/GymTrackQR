@@ -67,6 +67,24 @@ export const buildQrPayloadText = async ({ qrCodeId = ACTIVE_QR_DOC_ID, token })
   });
 };
 
+/**
+ * Build a "master" QR payload that never expires.
+ * Uses t=0 as a sentinel value meaning "no expiry".
+ * The signature is still tied to the current token, so rotating
+ * the token invalidates old master QRs.
+ */
+export const buildStaticQrPayloadText = async ({ qrCodeId = ACTIVE_QR_DOC_ID, token }) => {
+  const sig = await computeShortHash(token, 0);
+
+  return JSON.stringify({
+    type: QR_PAYLOAD_TYPE,
+    version: QR_PAYLOAD_VERSION,
+    qrCodeId,
+    t: 0,
+    s: sig,
+  });
+};
+
 export const parseQrPayloadText = (rawText) => {
   if (!rawText || typeof rawText !== "string") {
     return null;
@@ -206,13 +224,15 @@ export const validateQrPayloadAgainstActive = async (payload, windowSeconds = 60
     };
   }
 
-  // check timestamp freshness
-  const nowSec = Math.floor(Date.now() / 1000);
-  if (Math.abs(nowSec - payload.t) > windowSeconds) {
-    return {
-      valid: false,
-      reason: "QR expired or invalid.",
-    };
+  // check timestamp freshness (t === 0 means master QR, skip time check)
+  if (payload.t !== 0) {
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (Math.abs(nowSec - payload.t) > windowSeconds) {
+      return {
+        valid: false,
+        reason: "QR expired or invalid.",
+      };
+    }
   }
 
   // recompute signature and compare

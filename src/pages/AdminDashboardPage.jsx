@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Badge from "../components/Badge";
+import Button from "../components/Button";
 import EmptyState from "../components/EmptyState";
 import ErrorBanner from "../components/ErrorBanner";
 import Skeleton from "../components/Skeleton";
@@ -143,8 +144,8 @@ const AdminDashboardPage = () => {
       <ErrorBanner message={error || localError} />
 
       <div className="row gap-sm top-gap-sm">
-        <button className="btn small" onClick={handleExportCsv}>Export Logs CSV</button>
-        <button className="btn small ghost" onClick={refreshActiveSessions}>Refresh Active Sessions</button>
+        <Button variant="primary" size="sm" onClick={handleExportCsv}>Export Logs CSV</Button>
+        <Button variant="ghost" size="sm" onClick={refreshActiveSessions}>Refresh Sessions</Button>
       </div>
 
       <div>

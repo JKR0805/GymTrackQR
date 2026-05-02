@@ -299,6 +299,10 @@
   gap: 16px;
 }
 
+.qr-admin-grid > :last-child {
+  grid-column: 1 / -1;
+}
+
 .qr-preview-wrap {
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -312,6 +316,36 @@
   width: 100%;
   display: block;
   border-radius: 8px;
+}
+
+.qr-live-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px 0;
+}
+
+.qr-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: dotPulse 1.5s ease infinite;
+  flex-shrink: 0;
+}
+
+.qr-live-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--green);
+}
+
+.qr-live-countdown {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-left: auto;
+  font-family: "JetBrains Mono", monospace;
 }
 
 .summary-row {

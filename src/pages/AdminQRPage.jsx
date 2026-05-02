@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Button from "../components/Button";
 import Card from "../components/Card";
 import ErrorBanner from "../components/ErrorBanner";
+import Input from "../components/Input";
+import MapPicker from "../components/MapPicker";
 import Skeleton from "../components/Skeleton";
 import Spinner from "../components/Spinner";
 import { useAuth } from "../hooks/useAuth";
 import {
   buildQrPayloadText,
+  buildStaticQrPayloadText,
   createOrRotateActiveQrCode,
   getActiveQrCode,
   toQrDataUrl,
@@ -85,6 +88,38 @@ const AdminQRPage = () => {
     loadActiveQr();
   }, [loadActiveQr]);
 
+  // Auto-refresh QR payload every 30s to keep it within the 60s validity window
+  const AUTO_REFRESH_SECONDS = 30;
+  const [countdown, setCountdown] = useState(AUTO_REFRESH_SECONDS);
+  const countdownRef = useRef(null);
+
+  useEffect(() => {
+    // Only run when we have an active QR with a token
+    if (!activeQr?.token) return;
+
+    setCountdown(AUTO_REFRESH_SECONDS);
+
+    // Countdown ticker (every 1s)
+    countdownRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          return AUTO_REFRESH_SECONDS; // reset after refresh
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Payload refresh (every 30s)
+    const refreshInterval = setInterval(() => {
+      hydrateQrImage(activeQr);
+    }, AUTO_REFRESH_SECONDS * 1000);
+
+    return () => {
+      clearInterval(countdownRef.current);
+      clearInterval(refreshInterval);
+    };
+  }, [activeQr, hydrateQrImage]);
+
   const handleRotateQr = async () => {
     setRotating(true);
     setError("");
@@ -137,6 +172,24 @@ const AdminQRPage = () => {
     anchor.click();
   };
 
+  const handleDownloadMaster = async () => {
+    if (!activeQr?.token) return;
+    try {
+      const payloadText = await buildStaticQrPayloadText({
+        qrCodeId: activeQr.id,
+        token: activeQr.token,
+      });
+      const url = await toQrDataUrl(payloadText);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `irontrack-master-qr-${new Date().toISOString().slice(0, 10)}.png`;
+      anchor.click();
+      setSuccess("Master QR downloaded. Print it for the gym wall.");
+    } catch (err) {
+      setError(err?.message || "Failed to generate master QR.");
+    }
+  };
+
   const summaryItems = useMemo(
     () => [
       {
@@ -181,6 +234,11 @@ const AdminQRPage = () => {
           ) : qrImageUrl ? (
             <div className="qr-preview-wrap">
               <img src={qrImageUrl} alt="Gym QR code" className="qr-preview-image" />
+              <div className="qr-live-bar">
+                <span className="qr-live-dot" />
+                <span className="qr-live-label">LIVE</span>
+                <span className="qr-live-countdown">Refreshes in {countdown}s</span>
+              </div>
             </div>
           ) : (
             <div className="center-note">No active QR found yet. Generate one to begin scanning.</div>
@@ -195,6 +253,14 @@ const AdminQRPage = () => {
             <Button variant="ghost" onClick={handleDownload} disabled={!qrImageUrl || loading}>
               Download PNG
             </Button>
+
+            <Button variant="dark" onClick={handleDownloadMaster} disabled={!activeQr?.token || loading}>
+              Download Master QR
+            </Button>
+          </div>
+          <div className="hint-panel top-gap-sm">
+            <strong>Master QR</strong> is a static code that never expires. Print it for the gym wall.
+            It stays valid until you click "Rotate QR" to generate a new token.
           </div>
         </Card>
 
@@ -209,36 +275,60 @@ const AdminQRPage = () => {
             ))}
           </div>
 
-          <div className="top-gap-sm">
-            <div className="section-sub">Gym location (optional)</div>
-            <div className="row gap-sm top-gap-sm">
-              <input
-                className="input"
-                placeholder="Latitude"
-                value={geoState.lat}
-                onChange={(e) => setGeoState((s) => ({ ...s, lat: e.target.value }))}
-              />
-              <input
-                className="input"
-                placeholder="Longitude"
-                value={geoState.lng}
-                onChange={(e) => setGeoState((s) => ({ ...s, lng: e.target.value }))}
-              />
-              <input
-                className="input"
-                placeholder="Radius meters"
-                value={geoState.radiusMeters}
-                onChange={(e) => setGeoState((s) => ({ ...s, radiusMeters: e.target.value }))}
-              />
-            </div>
-            <div className="row gap-sm top-gap-sm">
-              <Button variant="primary" onClick={handleSaveGeo}>Save Location</Button>
-            </div>
-            <div className="hint-panel top-gap-sm">Set the gym coordinates to enable geofencing for scans.</div>
-          </div>
-
           <div className="hint-panel top-gap-sm">
             Members can check in and out only when this active QR is scanned from the mobile scanner page.
+          </div>
+        </Card>
+
+        <Card>
+          <div className="section-title">Gym Location</div>
+          <p className="section-sub">Set your gym's location to enable geofencing. Members must be within range to scan.</p>
+
+          <div className="top-gap-sm">
+            <MapPicker
+              lat={geoState.lat}
+              lng={geoState.lng}
+              radiusMeters={geoState.radiusMeters}
+              onChange={({ lat, lng, radiusMeters }) =>
+                setGeoState({ lat, lng, radiusMeters })
+              }
+              height={300}
+            />
+          </div>
+
+          <div className="top-gap-sm">
+            <Input
+              label="Geofence Radius (meters)"
+              type="number"
+              value={geoState.radiusMeters}
+              onChange={(e) =>
+                setGeoState((s) => ({ ...s, radiusMeters: Number(e.target.value) || 200 }))
+              }
+              placeholder="200"
+            />
+          </div>
+
+          {geoState.lat && geoState.lng ? (
+            <div className="geo-coords-display top-gap-sm">
+              <span className="mono muted small">
+                {Number(geoState.lat).toFixed(6)}, {Number(geoState.lng).toFixed(6)} · {geoState.radiusMeters}m radius
+              </span>
+            </div>
+          ) : null}
+
+          <div className="row gap-sm top-gap-sm">
+            <Button variant="primary" onClick={handleSaveGeo} disabled={!geoState.lat || !geoState.lng}>
+              Save Location
+            </Button>
+            {geoState.lat && geoState.lng ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setGeoState({ lat: "", lng: "", radiusMeters: 200 })}
+              >
+                Clear
+              </Button>
+            ) : null}
           </div>
         </Card>
       </div>

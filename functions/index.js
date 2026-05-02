@@ -105,10 +105,12 @@ exports.validateScan = functions.https.onRequest(async (req, res) => {
     const active = activeSnap.data();
     const token = active.token || "";
 
-    // time window check
-    const nowSec = Math.floor(Date.now() / 1000);
-    if (Math.abs(nowSec - payload.t) > 60) {
-      return sendJson(res, 400, { error: "QR expired or invalid" });
+    // time window check (t === 0 means master QR, skip time check)
+    if (payload.t !== 0) {
+      const nowSec = Math.floor(Date.now() / 1000);
+      if (Math.abs(nowSec - payload.t) > 60) {
+        return sendJson(res, 400, { error: "QR expired or invalid" });
+      }
     }
 
     // verify signature — plain SHA-256 to match client
